@@ -1,0 +1,13 @@
+<p>
+ID: <%= user.id %><br/>
+Name: <%= user.displayName %><br/>
+<% if (user.emails) { %>
+Email: <%= user.emails[0].value %><br/>
+<% } %>
+<% if (birthdays) { %>
+    Birthday: <%= birthdays[0].date.year %>-<%= birthdays[0].date.month %>-<%= birthdays[0].date.day %><br/>
+<% } %>
+<% if (user.photos) { %>
+    <img width="100" height="100" src='<%= user.photos[0].value %>'/>
+<% } %>
+</p>
