@@ -8,7 +8,8 @@ const { google } = require('googleapis');
 const scopes = [
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/userinfo.profile',
-  'https://www.googleapis.com/auth/user.birthday.read'
+  'https://www.googleapis.com/auth/user.birthday.read',
+  'https://www.googleapis.com/auth/calendar.readonly'
 ];
 // Configure the Google strategy for use by Passport.
 //
@@ -124,13 +125,45 @@ app.get('/profile',
       resourceName: 'people/me',
       personFields: 'birthdays',
     }).then(function (result) {
-      console.log(result.data.birthdays);
       res.render('profile',
         {
           user: req.user.profile,
           birthdays: result.data.birthdays
         });
     });
+  });
+
+app.get('/calendar',
+  require('connect-ensure-login').ensureLoggedIn(),
+  function (req, res) {
+    /**
+     * Create a new OAuth2 client
+     */
+    const oAuth2Client = new google.auth.OAuth2(
+      process.env.CLIENT_ID,
+      process.env.CLIENT_SECRET,
+      '/return');
+
+    oAuth2Client.credentials = {
+      access_token: req.user.token,
+      refresh_token: req.user.refreshToken
+    };
+
+    const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
+    calendar.events.list({
+      calendarId: 'primary',
+      timeMin: (new Date()).toISOString(),
+      maxResults: 3,
+      singleEvents: true,
+      orderBy: 'startTime',
+    })
+      .then(function (results) {
+        const events = results.data.items;
+        res.render('calendar', { events: events });
+      })
+      .catch(function (err) {
+        console.log('The API returned an error: ' + err);
+      });
   });
 
 const PORT = process.env.PORT || 8080;
